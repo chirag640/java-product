@@ -1,0 +1,44 @@
+package com.product;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.print.DocFlavor.STRING;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+
+import com.fasterxml.jackson.annotation.JsonValue;
+import com.paypal.api.payments.PaymentHistory;
+import com.paypal.base.exception.PayPalException;
+import com.paypal.base.rest.APIContext;
+import com.paypal.base.rest.OAuthTokenCredential;
+import com.paypal.base.rest.PayPalRESTException;
+
+public class paypalconfig{
+	@Value("${paypal.client.id}")
+	private String clientId;
+	@Value("${paypal.client.secret}")
+	private String clientsecret;
+	@Value("${paypal.mode}")
+	private String mode;
+	
+	@Bean
+	public Map<String,String> paypalSdkconfig()
+	{
+		Map<String, String>configMap = new HashMap<>();
+		configMap.put("mode", mode);
+		return configMap;
+	}
+	@Bean
+	public OAuthTokenCredential oAutoTokenCredential()
+	{
+		return new OAuthTokenCredential(clientId,clientsecret,paypalSdkconfig());
+	}
+	@Bean
+	public APIContext apiContext() throws PayPalRESTException{
+		APIContext context = new APIContext(oAutoTokenCredential().getAccessToken());
+		context.setConfigurationMap(paypalSdkconfig());
+		return apiContext();
+	}
+	}

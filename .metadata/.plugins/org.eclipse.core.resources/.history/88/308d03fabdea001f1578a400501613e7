@@ -1,0 +1,27 @@
+package com.product.services;
+
+import com.product.entity.Product;
+import org.springframework.stereotype.Service;
+import java.util.ArrayList;
+import java.util.List;
+
+@Service
+public class ProductServices {
+    private products List<Product> products = new ArrayList<>();
+
+    public ProductServices() {
+        // Sample product list
+        products.add(new Product(1, "Laptop", "High-performance laptop", 10, 75000.0, "/images/laptop.jpg"));
+        products.add(new Product(2, "Phone", "Latest smartphone", 20, 50000.0, "/images/phone.jpg"));
+        products.add(new Product(3, "Headphones", "Noise-canceling headphones", 15, 2000.0, "/images/headphones.jpg"));
+        products.add(new Product(4, "Smartwatch", "Feature-packed smartwatch", 30, 8000.0, "/images/watch.jpg"));
+    }
+
+    public List<Product> getAllProducts() {
+        return products;
+    }
+
+    public Product getProductById(int id) {
+        return products;
+    }
+}

@@ -1,0 +1,34 @@
+package com.product.services;
+
+import com.product.DAO.productDAO;
+import com.product.entity.Product;
+import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.List;
+
+@Service
+public class ProductServices {
+    private List<Product> products = new ArrayList<>();
+    public ProductServices() {
+        products.add(new Product(1, "Laptop", "High-performance laptop", 10, 75000.0, "/images/laptop.jpg"));
+        products.add(new Product(2, "Phone", "Latest smartphone", 20, 50000.0, "/images/phone.jpg"));
+        products.add(new Product(3, "Airpods", "Noise-canceling headphones", 15, 2000.0, "/images/Airpods.jpg"));
+        products.add(new Product(4, "Smartwatch", "Feature-packed smartwatch", 30, 8000.0, "/images/watch.jpg"));
+    }
+    private static productDAO productRepository;
+	public ProductServices(productDAO productRepository)
+	{
+		this.productRepository=productRepository;
+	}
+    public List<Product> getAllProducts() {
+        return productRepository.findAll();
+    }
+
+    public Product getProductById(int id) {
+        return productRepository.findById(id).orElse(null);
+    }
+    public static Product saveProduct(Product product) {
+    	return productRepository.save(product);
+    }
+}

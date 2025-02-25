@@ -1,0 +1,74 @@
+package com.product.controller;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.view.RedirectView;
+
+import com.paypal.api.payments.Links;
+import com.paypal.api.payments.Payment;
+import com.paypal.base.rest.PayPalRESTException;
+import com.product.services.PayPalService;
+
+import lombok.RequiredArgsConstructor;
+
+@Controller
+//@RequestMapping("/payment")
+//@RequiredArgsConstructor
+public class PayPalController {
+    
+    @Autowired
+    PayPalService service;
+    
+//    @GetMapping("/create")
+//    public String home() {
+//        return "home";
+//    }
+    @GetMapping("/paymentSuccess")
+    public String paymentSuccess(Model model) {
+        model.addAttribute("message", "Payment successful! Thank you for your purchase.");
+        return "buyconfirmation"; 
+    }
+    
+    @PostMapping("/create")
+    public RedirectView createPayment() {
+        try {
+            String cancelUrl = "https://localhost:8080/payment/cancel";
+            String successUrl = "https://localhost:8080/payment/success";
+            Payment payment = PayPalService.createPayment(10.0, "USD", "paypal", "Sale", "Payment Description",cancelUrl,successUrl);
+            for (Links links : payment.getLinks()) {
+                if (links.getRel().equals("approval_url")) {
+                    return new RedirectView(links.getHref());
+                }
+            }
+        } catch (PayPalRESTException e) {
+        	System.out.println("Error Occured while creating payment:" + e.getMessage());
+                }
+        return new RedirectView("/payment/error");
+    }
+    
+    @GetMapping("/success")
+    public String paymentSuccess(
+            @RequestParam("paymentId") String paymentId,
+            @RequestParam("payerId") String payerId) {
+        Payment payment = new Payment();
+		if (payment.getState().equals("approved")) {
+		    return "paymentSuccess";
+		}
+        return "index";
+    }
+    
+    @GetMapping("/cancel")
+    public String paymentCancel() {
+        return "index";
+    }
+    
+    @GetMapping("/error")
+    public String paymentError() {
+        return "index";
+    }
+}

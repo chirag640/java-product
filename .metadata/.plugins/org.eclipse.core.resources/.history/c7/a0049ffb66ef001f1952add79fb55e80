@@ -1,0 +1,82 @@
+package com.product.controller;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.view.RedirectView;
+
+import com.paypal.api.payments.Links;
+import com.paypal.api.payments.Payment;
+import com.paypal.base.rest.PayPalRESTException;
+import com.product.entity.Product;
+import com.product.services.PayPalService;
+import com.product.services.ProductServices;
+
+@Controller
+public class PayPalController {
+
+    @GetMapping("/buy/{id}")
+    public String showProductDetail(@PathVariable int id, Model model) {
+        Product product = ProductServices.getPaymentById(id);
+        if (product == null) {
+            return "error"; // Show an error page if the product is not found
+        }
+        return "redirect:/payment?name=" + product.getName() + "&price=" + product.getPrice();
+    }
+
+    @GetMapping("/payment")
+    public String showPaymentPage(@RequestParam String name, @RequestParam double price, Model model) {
+        model.addAttribute("productName", name);
+        model.addAttribute("amount", price);
+        return "payment"; // `payment.html` file
+    }
+
+    @PostMapping("/payment")
+    public RedirectView createPayment(@RequestParam double amount) {
+        try {
+            String cancelUrl = "http://localhost:8080/payment/cancel";
+            String successUrl = "http://localhost:8080/payment/success";
+            Payment payment = PayPalService.createPayment(amount, "USD", "paypal", "Sale", "Payment Description", cancelUrl, successUrl);
+            for (Links links : payment.getLinks()) {
+                if (links.getRel().equals("approval_url")) {
+                    return new RedirectView(links.getHref());
+                }
+            }
+        } catch (PayPalRESTException e) {
+            System.out.println("Error Occurred while creating payment: " + e.getMessage());
+        }
+        return new RedirectView("/error");
+    }
+
+    @GetMapping("/success")
+    public String paymentSuccess(
+            @RequestParam("paymentId") String paymentId,
+            @RequestParam("payerId") String payerId,
+            Model model) {
+        try {
+            Payment payment = PayPalService.excecutePayment(paymentId, payerId);
+            if (payment.getState().equals("approved")) {
+                model.addAttribute("message", "Payment successful! Thank you for your purchase.");
+                return "buyconfirmation"; // Show confirmation page
+            }
+        } catch (PayPalRESTException e) {
+            System.out.println("Error Occurred while executing payment: " + e.getMessage());
+        }
+        return "redirect:/error";
+    }
+
+    @GetMapping("/cancel")
+    public String paymentCancel(Model model) {
+        model.addAttribute("message", "Payment was canceled.");
+        return "index";
+    }
+
+    @GetMapping("/error")
+    public String paymentError(Model model) {
+        model.addAttribute("message", "An error occurred during payment.");
+        return "error";
+    }
+}

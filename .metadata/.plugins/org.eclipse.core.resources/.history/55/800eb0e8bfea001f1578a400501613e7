@@ -1,0 +1,32 @@
+package com.product.controller;
+
+import java.util.List;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+
+import com.product.entity.Product;
+import com.product.services.ProductServices;
+
+@Controller
+public class ProductController {
+    private final ProductServices productService;
+
+    public ProductController(ProductServices productService) {
+        this.productService = productService;
+    }
+    @GetMapping("/product")
+    public String showProducts(Model model) {
+        List<Product> products = productService.getAllProducts();  //fIXED Use productService
+        model.addAttribute("products", products);
+        return "index";
+    }
+    @GetMapping("/product/{id}")
+    public String showProductDetail(@PathVariable int id, Model model) {
+        Product product = productService.getProductById(id);
+        model.addAttribute("product", product);
+        return "product";
+    }
+}

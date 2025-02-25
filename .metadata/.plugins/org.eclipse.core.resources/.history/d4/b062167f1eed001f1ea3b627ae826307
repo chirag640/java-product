@@ -1,0 +1,47 @@
+package com.product.controller;
+
+import java.util.List;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+
+import com.product.entity.Product;
+import com.product.services.ProductServices;
+
+@Controller
+public class ProductController {
+    private final ProductServices productService;
+
+    public ProductController(ProductServices productService) {
+        this.productService = productService;
+    }
+
+    @GetMapping("/")
+    public String showProducts(Model model) {
+        List<Product> products = productService.getAllProducts();
+        model.addAttribute("products", products);
+        return "index"; // Thymeleaf template (index.html)
+    }
+
+    /*@GetMapping("/product/{id}")
+    public String showProductDetail(@PathVariable int id, Model model) {
+        Product product = productService.getProductById(id);
+        if (product == null) {
+            return "error"; 
+        }
+        model.addAttribute("product", product);
+        return "product"; 
+    }*/
+    @PostMapping("/add")
+    public String addProduct(@ModelAttribute Product product, Model model) {
+        productService.saveProduct(product);  // saveProduct() works
+        model.addAttribute("products", productService.getAllProducts());
+        return "index";
+    }
+
+    	
+    }
+}

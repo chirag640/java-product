@@ -20,29 +20,32 @@ import com.product.services.ProductServices;
 @Controller
 @RequestMapping("/payment")
 public class PayPalController {
-	
-	@Autowired
-	ProductServices productServices;
 
-	@GetMapping("/buy/{id}")
+    @Autowired
+    ProductServices productServices;
+
+    @Autowired
+    PayPalService payPalService;
+
+    @GetMapping("/buy/{id}")
     public String showProductDetail(@PathVariable int id, Model model) {
-    	System.out.println("Entered");
-    	try {
-	        Product product = productServices.getProductById(id);
-	        if (product == null) {
-	            return "error"; 
-	        }else {
-	        System.out.println(product.toString());}
+        try {
+            Product product = productServices.getProductById(id);
+            if (product == null) {
+                return "error";
+            }
+            model.addAttribute("productName", product.getName());
+            model.addAttribute("amount", product.getPrice());
+            return "payment";
         } catch (Exception e) {
-        	System.out.println(e);
-		}
-        System.out.println("Entered 2");
-        return "payment";
+            System.out.println(e);
+            return "error";
+        }
     }
 
     @GetMapping("/payment")
     public String showPaymentPage(@RequestParam String name, @RequestParam double price, Model model) {
-    	System.out.println("Entered in payment");
+        System.out.println("Entered in payment");
         model.addAttribute("productName", name);
         model.addAttribute("amount", price);
         return "payment";
@@ -51,16 +54,24 @@ public class PayPalController {
     @PostMapping("/payment")
     public RedirectView createPayment(@RequestParam double amount) {
         try {
-            String cancelUrl = "http://localhost:8080/payment/cancel";
-            String successUrl = "http://localhost:8080/payment/success";
-            Payment payment = PayPalService.createPayment(amount, "USD", "paypal", "Sale", "Payment Description", cancelUrl, successUrl);
+            String cancelUrl = "http://localhost:8081/payment/cancel";
+            String successUrl = "http://localhost:8081/payment/success";
+            Payment payment = payPalService.createPayment(
+                    amount,
+                    "USD",
+                    "paypal",
+                    "sale",
+                    "Payment for product",
+                    cancelUrl,
+                    successUrl);
+
             for (Links links : payment.getLinks()) {
                 if (links.getRel().equals("approval_url")) {
                     return new RedirectView(links.getHref());
                 }
             }
         } catch (PayPalRESTException e) {
-            System.out.println("Error Occurred while creating payment: " + e.getMessage());
+            System.out.println("Error occurred: " + e.getMessage());
         }
         return new RedirectView("/error");
     }
@@ -68,14 +79,19 @@ public class PayPalController {
     @GetMapping("/success")
     public String paymentSuccess(
             @RequestParam("paymentId") String paymentId,
-            @RequestParam("payerId") String payerId,
-            Model model) throws PayPalRESTException {
-        Payment payment = new Payment();
-		if (payment.getState().equals("approved")) {
-		    model.addAttribute("message", "Payment successful! Thank you for your purchase.");
-		    return "purchase-confirmation"; 
-		}
-        return "redirect:/error";
+            @RequestParam("PayerID") String payerId,
+            Model model) {
+        try {
+            Payment payment = payPalService.excecutePayment(paymentId, payerId);
+            if (payment.getState().equals("approved")) {
+                model.addAttribute("message", "Payment successful!");
+                return "paymentSucess";
+            }
+        } catch (PayPalRESTException e) {
+            model.addAttribute("message", "Error occurred: " + e.getMessage());
+            return "paymentError";
+        }
+        return "paymentError";
     }
 
     @GetMapping("/cancel")

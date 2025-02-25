@@ -94,6 +94,7 @@ public class PayPalController {
         return "paymentError";
     }
 
+
     @GetMapping("/cancel")
     public String paymentCancel(Model model) {
         model.addAttribute("message", "Payment was canceled.");

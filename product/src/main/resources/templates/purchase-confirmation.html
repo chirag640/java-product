@@ -5,10 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Purchase Confirmation</title>
     <meta
-      http-equiv="Content-Security-Policy"
-      content="script-src 'self' https://*.paypal.com https://*.paypalobjects.com"
-    />
-    <script src="https://www.paypal.com/sdk/js?client-id=AZ5knaBkW6d-CTM3ihfWMIdicER-JxmX5KohSZpUypi1b4eHA4qDklZkDSXkYWVJT5jd77-QQi6G0_H3"></script>
+  http-equiv="Content-Security-Policy"
+  content="
+    default-src 'self' https://*.paypal.com https://*.paypalobjects.com;
+    script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://*.paypal.com https://*.paypalobjects.com;
+    style-src 'self' 'unsafe-inline';"
+ />
+
+ <script src="https://www.paypal.com/sdk/js?client-id=ARnuPhj4PdiZruHZfmGR21CLheYSMywbWvccq0A5wDIpTH6oN-SJHm5fDNfC_nW2h9GQitysQBsaWD9P&currency=USD"></script>
+
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
@@ -19,8 +24,7 @@
       <a href="/">Back to Product List</a>
     </div>
 
-    <script th:inline="javascript">
-      var amount = /*[[${amount}]]*/ "10.00";
+    <script>
       paypal
         .Buttons({
           createOrder: function (data, actions) {
@@ -28,7 +32,7 @@
               purchase_units: [
                 {
                   amount: {
-                    value: amount,
+                    value: "[[${amount}]]",
                   },
                 },
               ],
@@ -38,9 +42,9 @@
             return actions.order.capture().then(function (details) {
               window.location.href =
                 "/payment/success?paymentId=" +
-                data.paymentID +
-                "&payerId=" +
-                data.payerID;
+                data.orderID +
+                "&PayerID=" +
+                details.payer.payer_id;
             });
           },
         })
